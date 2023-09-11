@@ -1,0 +1,161 @@
+<?php
+class adminBlog
+{
+    //db conn
+    private $conn;
+    public function __construct()
+    {
+        //databse host,db user,db pass,db name;
+        $dbhost = 'localhost';
+        $dbuser = 'root';
+        $dbpass = "";
+        $dbname = 'blog_project';
+        $this->conn = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
+        if (!$this->conn) {
+            die("DB Connection Error");
+        }
+    }
+    //Admin login 
+    public function admin_login($data)
+    {
+        $admin_email = $data["admin_email"];
+        $admin_pass = md5($data["admin_pass"]);
+        $query = "SELECT * FROM admin_info WHERE admin_email='$admin_email' && admin_pass='$admin_pass'";
+        if (mysqli_query($this->conn, $query)) {
+            $admin_info = mysqli_query($this->conn, $query);
+
+            if ($admin_info) {
+                header("location:dashboard.php");
+                $admin_data = mysqli_fetch_assoc($admin_info);
+                session_start();
+                $_SESSION['adminID'] = $admin_data['id'];
+                $_SESSION['admin_name'] = $admin_data["admin_name"];
+
+            }
+
+        }
+
+    }
+    //Logout function
+
+    public function adminLogout()
+    {
+        unset($_SESSION['adminID']);
+        unset($_SESSION["admin_name"]);
+        header("location: index.php");
+
+    }
+    //Add Category
+
+    public function add_category($data)
+    {
+        $cat_name = $data["cat_name"];
+        $cat_des = $data["cat_des"];
+        $qurey = "INSERT INTO  category(cat_name,cat_des) VALUES('$cat_name','$cat_des')";
+        if (mysqli_query($this->conn, $qurey)) {
+            return "Category Added Successfully";
+        }
+        ;
+    }
+
+    //Manage Category
+
+    public function display_category()
+    {
+        $query = "SELECT * FROM category";
+        if (mysqli_query($this->conn, $query)) {
+            $category = mysqli_query($this->conn, $query);
+            return $category;
+
+        }
+
+    }
+
+    //Delete 
+    public function delete_category($id)
+    {
+        $query = "DELETE FROM category WHERE cat_id=$id";
+        if (mysqli_query($this->conn, $query)) {
+            return "Category Deleted Successfully";
+        }
+
+    }
+    public function add_post($data)
+    {
+        $post_title = $data['post_title'];
+        $post_content = $data['post_content'];
+        $post_img = $_FILES['post_img']['name'];
+        $post_img_tmp = $_FILES['post_img']['tmp_name'];
+        $post_category = $data['post_category'];
+        $post_summery = $data['post_summery'];
+        $post_tag = $data['post_tag'];
+        $post_status = $data['post_status'];
+        //Databse qurey
+        $qurey = "INSERT INTO posts(post_title,post_content,post_img,post_ctg,post_author,post_date,post_comment_count,post_summery,post_tag,post_status) VALUES('$post_title','$post_content','$post_img',$post_category,'Admin',now(),3,'$post_summery','$post_tag',$post_status)";
+
+
+        if (mysqli_query($this->conn, $qurey)) {
+            move_uploaded_file($post_img_tmp, '../upload/' . $post_img);
+            return "Post Added Successfully";
+        }
+
+    }
+
+    //Display New Post
+    public function display_post()
+    {
+        $qurey = "SELECT * FROM post_with_ctg";
+        if (mysqli_query($this->conn, $qurey)) {
+            $posts = mysqli_query($this->conn, $qurey);
+            return $posts;
+
+        }
+    }
+    //Blog post Page Function
+    public function display_post_public()
+    {
+        $qurey = "SELECT * FROM post_with_ctg WHERE post_status=1";
+        if (mysqli_query($this->conn, $qurey)) {
+            $posts = mysqli_query($this->conn, $qurey);
+            return $posts;
+
+        }
+    }
+    public function edit_img($data)
+    {
+        $id = $data["editimg_id"];
+        $imgname = $_FILES["change_img"]["name"];
+        $tmp_name = $_FILES["change_img"]["tmp_name"];
+        $query = "UPDATE posts SET post_img='$imgname' WHERE post_id=$id";
+        if (mysqli_query($this->conn, $query)) {
+            move_uploaded_file($tmp_name, "../upload/" . $imgname);
+            return "Thumbnail Update Successfully";
+
+        }
+
+    }
+    public function get_post_info($id)
+    {
+        $query = "SELECT * FROM post_with_ctg WHERE post_id =$id";
+        if (mysqli_query($this->conn, $query)) {
+            $post_info = mysqli_query($this->conn, $query);
+            $post = mysqli_fetch_assoc($post_info);
+            return $post;
+        }
+
+    }
+    public function update_post($data)
+    {
+        $post_title = $data['change_title'];
+        $post_content = $data['change_content'];
+        $post_id = $data["edit_post_id"];
+        $qurey = "UPDATE posts SET post_title='$post_title',post_content='$post_content' WHERE post_id=$post_id";
+        if (mysqli_query($this->conn, $qurey)) {
+            return "Post Update Successfully";
+
+        }
+
+
+    }
+
+}
